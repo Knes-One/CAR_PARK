@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Гараж — автомобили</title>
+    
+    <!-- PWA иконки -->
+    <link rel="icon" href="icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e8f0fe">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(145deg, #e8f0fe 0%, #f5f7fa 40%, #fce9ec 100%);
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --radius: 28px;
+            --radius-inner: 18px;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --accent: #0a84ff;
+            --red: #ff453a;
+            --orange: #ff9f0a;
+            --green: #30d158;
+            --card-bg: rgba(255, 255, 255, 0.55);
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-primary);
+            padding-top: calc(20px + var(--safe-top));
+            padding-bottom: calc(20px + var(--safe-bottom));
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -20%;
+            width: 70%;
+            height: 70%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            filter: blur(60px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -30%;
+            right: -20%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            filter: blur(60px);
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* PIN экран */
+        .pin-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 18vh;
+            z-index: 1000;
+            transition: opacity 0.5s, visibility 0.5s;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .pin-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .pin-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: pinFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pinFadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .pin-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 50%, #1c1c1e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pin-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .pin-error-message {
+            font-size: 14px;
+            color: var(--red);
+            text-align: center;
+            margin-bottom: 16px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+
+        .pin-dots {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.1);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .pin-dot.filled {
+            background: var(--accent);
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
+        }
+
+        .pin-dot.error {
+            background: var(--red);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .pin-key {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.8);
+            font-size: 32px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.12s;
+            font-family: var(--font);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            min-height: 72px;
+            touch-action: manipulation;
+        }
+
+        .pin-key:active {
+            transform: scale(0.82);
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        .pin-delete-svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .main-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(40px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px 20px 30px;
+            animation: cardAppear 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+            min-height: 80vh;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .car-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .car-item {
+            background: var(--card-bg);
+            border-radius: var(--radius-inner);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: all 0.15s;
+            touch-action: manipulation;
+        }
+
+        .car-item:active {
+            transform: scale(0.97);
+        }
+
+        .car-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .car-svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .car-name {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .plate-container {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .license-plate {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 2px solid #1c1c1e;
+            border-radius: 6px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            height: 40px;
+            min-width: 130px;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+            overflow: hidden;
+        }
+
+        .plate-chars {
+            font-size: 18px;
+            color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            letter-spacing: 0.5px;
+            padding: 0 8px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .plate-region {
+            border-left: 2px solid #1c1c1e;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            background: white;
+            color: #1c1c1e;
+            letter-spacing: 0.5px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        .car-detail-screen {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(40px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px 20px 30px;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .detail-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .detail-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .add-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 18px;
+            background: var(--accent);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.35);
+            transition: transform 0.15s;
+            touch-action: manipulation;
+        }
+
+        .add-btn:active {
+            transform: scale(0.92);
+        }
+
+        .add-btn-svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.6);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.15s;
+            touch-action: manipulation;
+        }
+
+        .back-btn:active {
+            transform: scale(0.92);
+        }
+
+        .back-svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .reminder-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 18px;
+            background: var(--orange);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 159, 10, 0.35);
+            transition: transform 0.15s;
+            touch-action: manipulation;
+        }
+
+        .reminder-btn:active {
+            transform: scale(0.92);
+        }
+
+        .reminder-svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .car-photo-large {
+            width: 100%;
+            height: 280px;
+            border-radius: var(--radius-inner);
+            background: #f8f8f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .car-photo-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .car-photo-large .car-svg {
+            width: 120px;
+            height: 120px;
+            stroke: #c0c0c0;
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .car-photo-large::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(to top, rgba(255,255,255,0.3), transparent);
+            pointer-events: none;
+        }
+
+        .reminders-block {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .reminder-item {
+            background: rgba(255, 159, 10, 0.15);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            touch-action: manipulation;
+        }
+
+        .reminder-item:active {
+            transform: scale(0.97);
+        }
+
+        .reminder-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            stroke: var(--orange);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .reminder-text {
+            flex: 1;
+            font-weight: 600;
+            font-size: 15px;
+            word-break: break-word;
+        }
+
+        .reminder-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .search-box {
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
+
+        .history-section {
+            position: relative;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .history-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .history-toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .history-toggle-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-secondary);
+            fill: none;
+            stroke-width: 1.5;
+            transition: transform 0.3s;
+        }
+
+        .history-toggle-svg.rotated {
+            transform: rotate(180deg);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
+            transition: max-height 0.3s, opacity 0.25s;
+            opacity: 1;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .history-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .history-list.collapsed {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.4);
+            transition: transform 0.12s, background 0.2s;
+            cursor: pointer;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        .history-item:active {
+            transform: scale(0.97);
+        }
+
+        .history-item.active {
+            background: rgba(255,255,255,0.7);
+            border-color: rgba(10, 132, 255, 0.2);
+            border-radius: 16px 16px 8px 8px;
+        }
+
+        .history-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+
+        .history-icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .history-details {
+            flex: 1;
+            min-width: 0;
+            pointer-events: none;
+        }
+
+        .history-record-title {
+            font-size: 14px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .history-item-actions {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+            opacity: 0;
+            display: flex;
+            gap: 8px;
+            padding: 0 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 0 0 12px 12px;
+            border-left: 1px solid rgba(255,255,255,0.4);
+            border-right: 1px solid rgba(255,255,255,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .history-item-actions.open {
+            max-height: 70px;
+            opacity: 1;
+            padding: 8px;
+        }
+
+        .history-action-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+
+        .history-action-btn:active {
+            transform: scale(0.95);
+            filter: brightness(1.1);
+        }
+
+        .history-action-edit {
+            background: var(--orange);
+        }
+
+        .history-action-delete {
+            background: var(--red);
+        }
+
+        .history-action-icon {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            fill: none;
+            stroke-width: 1.8;
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(40px);
+            border-radius: 32px;
+            width: 100%;
+            max-width: 420px;
+            padding: 28px 24px;
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            transform: translateY(20px) scale(0.96);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.06);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .modal-close-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-secondary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 16px;
+            padding: 16px 18px;
+            font-size: 16px;
+            font-family: var(--font);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            padding: 18px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+            font-family: var(--font);
+            box-shadow: 0 8px 24px rgba(10, 132, 255, 0.4);
+            touch-action: manipulation;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s;
+            padding: 20px;
+        }
+
+        .confirm-dialog.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirm-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(40px);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 360px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            transform: translateY(20px) scale(0.96);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .confirm-dialog.active .confirm-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .confirm-message {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .confirm-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            word-break: break-word;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 16px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font);
+            touch-action: manipulation;
+        }
+
+        .confirm-btn:active {
+            transform: scale(0.96);
+        }
+
+        .confirm-btn-cancel {
+            background: rgba(0,0,0,0.06);
+            color: var(--text-primary);
+        }
+
+        .confirm-btn-delete {
+            background: var(--red);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 69, 58, 0.3);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 14px 22px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 5000;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        @media (max-width: 400px) {
+            .main-card { padding: 18px 14px 24px; }
+            .car-item { padding: 12px; }
+            .car-photo-large { height: 240px; }
+            .pin-key { font-size: 28px; min-height: 64px; }
+            .pin-title { font-size: 24px; }
+            .pin-screen { padding-top: 14vh; }
+            .modal-card { padding: 20px 16px; }
+            .history-action-btn { font-size: 12px; padding: 8px; }
+            .history-action-icon { width: 16px; height: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="pin-screen" id="pinScreen">
+        <div class="pin-content">
+            <div class="pin-title">Гараж</div>
+            <div class="pin-subtitle">Введите PIN-код</div>
+            <div class="pin-error-message" id="pinErrorMessage"></div>
+            <div class="pin-dots" id="pinDots">
+                <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+            </div>
+            <div class="pin-keypad" id="pinKeypad">
+                <button class="pin-key" data-key="1">1</button>
+                <button class="pin-key" data-key="2">2</button>
+                <button class="pin-key" data-key="3">3</button>
+                <button class="pin-key" data-key="4">4</button>
+                <button class="pin-key" data-key="5">5</button>
+                <button class="pin-key" data-key="6">6</button>
+                <button class="pin-key" data-key="7">7</button>
+                <button class="pin-key" data-key="8">8</button>
+                <button class="pin-key" data-key="9">9</button>
+                <button class="pin-key" data-key="#">#</button>
+                <button class="pin-key" data-key="0">0</button>
+                <button class="pin-key delete" id="pinDeleteBtn">
+                    <svg class="pin-delete-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 7l10 10M17 7L7 17" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer"></div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">Новая запись</span>
+                <button class="modal-close" id="closeModalBtn">
+                    <svg class="modal-close-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="input-group">
+                <label class="input-label" id="modalDescLabel">Текст записи</label>
+                <input class="input-field" id="modalDesc" placeholder="Например, Замена масла" autocomplete="off" maxlength="200">
+            </div>
+            <div class="input-group" id="reminderDateGroup" style="display:none;">
+                <label class="input-label">Дата выполнения</label>
+                <input class="input-field" id="reminderDate" type="date">
+            </div>
+            <button class="submit-btn" id="submitModalBtn">Добавить</button>
+        </div>
+    </div>
+
+    <div class="confirm-dialog" id="confirmDialog">
+        <div class="confirm-card">
+            <div class="confirm-message" id="confirmMessage">Подтвердить?</div>
+            <div class="confirm-sub" id="confirmSub"></div>
+            <div class="confirm-actions">
+                <button class="confirm-btn confirm-btn-cancel" id="confirmCancelBtn">Отмена</button>
+                <button class="confirm-btn confirm-btn-delete" id="confirmDeleteBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            const SUPABASE_URL = 'https://ihapllsmohkvvdvrnkbm.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_7PAoLekuYrNbboYRERVsEQ_JOCfg0FV';
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            let pinCode = '';
+            const correctPin = '0101';
+            let cars = [];
+            let currentCarId = null;
+            let currentScreen = 'list';
+            let records = [];
+            let reminders = [];
+            let modalMode = 'record';
+            let editRecordId = null;
+            let deleteTarget = null;
+            let toastTimer = null;
+            let searchQuery = '';
+            let isHistoryCollapsed = false;
+            let openedItemId = null;
+
+            const $ = id => document.getElementById(id);
+            const pinScreen = $('pinScreen');
+            const pinDots = document.querySelectorAll('.pin-dot');
+            const pinKeypad = $('pinKeypad');
+            const pinDeleteBtn = $('pinDeleteBtn');
+            const pinErrorMessage = $('pinErrorMessage');
+            const appContainer = $('appContainer');
+            const modalOverlay = $('modalOverlay');
+            const modalTitle = $('modalTitle');
+            const modalDesc = $('modalDesc');
+            const modalDescLabel = $('modalDescLabel');
+            const reminderDateGroup = $('reminderDateGroup');
+            const reminderDate = $('reminderDate');
+            const submitModalBtn = $('submitModalBtn');
+            const confirmDialog = $('confirmDialog');
+            const confirmMessage = $('confirmMessage');
+            const confirmSub = $('confirmSub');
+            const toast = $('toast');
+
+            function showToast(msg) { 
+                toast.textContent = msg; 
+                toast.classList.add('show'); 
+                clearTimeout(toastTimer); 
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 3000); 
+            }
+            
+            function vibrate(p) { 
+                if (navigator.vibrate) navigator.vibrate(p); 
+            }
+
+            function updatePinDots() { 
+                pinDots.forEach((dot,i) => dot.classList.toggle('filled', i < pinCode.length)); 
+            }
+
+            pinKeypad.addEventListener('click', (e) => {
+                const key = e.target.closest('.pin-key');
+                if (!key || key.classList.contains('delete')) return;
+                if (pinCode.length < 4) {
+                    pinCode += key.dataset.key; 
+                    vibrate(10); 
+                    updatePinDots();
+                    if (pinCode.length === 4) checkPin();
+                }
+            });
+            
+            pinDeleteBtn.addEventListener('click', () => { 
+                pinCode = pinCode.slice(0,-1); 
+                vibrate(10); 
+                updatePinDots(); 
+            });
+            
+            function checkPin() {
+                if (pinCode === correctPin) {
+                    pinErrorMessage.textContent = ''; 
+                    pinScreen.classList.add('hidden'); 
+                    vibrate(50); 
+                    loadData();
+                } else {
+                    pinErrorMessage.textContent = 'Неверный PIN-код'; 
+                    vibrate([80,40,80]);
+                    pinDots.forEach(dot => { 
+                        dot.classList.add('error'); 
+                        setTimeout(() => dot.classList.remove('error','filled'), 500); 
+                    });
+                    pinCode = '';
+                }
+            }
+
+            async function loadData() {
+                try {
+                    const [carsRes, recordsRes, remindersRes] = await Promise.all([
+                        supabase.from('cars').select('*').order('id'),
+                        supabase.from('records').select('*'),
+                        supabase.from('reminders').select('*')
+                    ]);
+                    if (carsRes.error) throw carsRes.error;
+                    
+                    cars = carsRes.data || [];
+                    records = recordsRes.data || [];
+                    reminders = remindersRes.data || [];
+                    renderScreen();
+                } catch(e) {
+                    console.error(e);
+                    showToast('Ошибка загрузки данных');
+                }
+            }
+
+            function renderScreen() {
+                if (currentScreen === 'list') renderCarList();
+                else renderCarDetail();
+            }
+
+            function renderCarList() {
+                appContainer.innerHTML = `
+                    <div class="main-card">
+                        <div class="car-list">
+                            ${cars.length ? cars.map(car => `
+                                <div class="car-item" data-car-id="${car.id}">
+                                    <div class="car-icon">
+                                        <svg class="car-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M5 11l1.5-4h11L19 11M5 11h14v8H5zM8 16h.01M16 16h.01" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/>
+                                        </svg>
+                                    </div>
+                                    <div class="car-name">${car.name}</div>
+                                    <div class="plate-container">
+                                        <div class="license-plate">
+                                            <span class="plate-chars">${car.plate_chars}</span>
+                                            <span class="plate-region">${car.region}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : '<div class="empty-state">Нет автомобилей</div>'}
+                        </div>
+                    </div>`;
+                
+                document.querySelectorAll('.car-item').forEach(item => { 
+                    item.addEventListener('click', () => { 
+                        currentCarId = item.dataset.carId; 
+                        currentScreen = 'detail'; 
+                        searchQuery = '';
+                        isHistoryCollapsed = false;
+                        openedItemId = null;
+                        vibrate(10); 
+                        renderScreen(); 
+                    }); 
+                });
+            }
+
+            function renderCarDetail() {
+                const car = cars.find(c => c.id == currentCarId);
+                if (!car) { 
+                    currentScreen = 'list'; 
+                    renderScreen(); 
+                    return; 
+                }
+                
+                const carRecords = records.filter(r => r.car_id == currentCarId);
+                const carReminders = reminders.filter(r => r.car_id == currentCarId && r.status === 'active');
+                const filteredRecords = searchQuery ? carRecords.filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase())) : carRecords;
+                
+                appContainer.innerHTML = `
+                    <div class="car-detail-screen">
+                        <div class="detail-header">
+                            <button class="back-btn" id="backBtn">
+                                <svg class="back-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div class="detail-title">${car.name}</div>
+                            <div class="detail-buttons">
+                                <button class="reminder-btn" id="addReminderBtn">
+                                    <svg class="reminder-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="add-btn" id="addRecordBtn">
+                                    <svg class="add-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="car-photo-large">
+                            <img src="car_${car.id}.jpg" alt="${car.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <svg class="car-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;">
+                                <path d="M5 11l1.5-4h11L19 11M5 11h14v8H5zM8 16h.01M16 16h.01" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/>
+                            </svg>
+                        </div>
+                        
+                        <div class="reminders-block">
+                            ${carReminders.map(r => `
+                                <div class="reminder-item" data-reminder-id="${r.id}">
+                                    <svg class="reminder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span class="reminder-text">${r.text}</span>
+                                    <span class="reminder-date">до ${new Date(r.due_date).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="search-box">
+                            <input class="search-input" id="searchInput" placeholder="Поиск по записям..." value="${searchQuery}">
+                        </div>
+                        
+                        <div class="history-section">
+                            <div class="history-header">
+                                <div class="history-header-left">
+                                    <div class="history-title">История</div>
+                                </div>
+                                <button class="history-toggle-btn" id="toggleHistoryBtn" aria-label="Свернуть/развернуть историю">
+                                    <svg class="history-toggle-svg ${isHistoryCollapsed ? '' : 'rotated'}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="history-list ${isHistoryCollapsed ? 'collapsed' : ''}" id="historyList">
+                                ${filteredRecords.length ? filteredRecords.map(r => `
+                                    <div style="margin-bottom: 4px;">
+                                        <div class="history-item" data-record-id="${r.id}">
+                                            <div class="history-icon">
+                                                <svg class="history-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 8v4l3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
+                                            <div class="history-details">
+                                                <div class="history-record-title">${r.text}</div>
+                                                <div class="history-date">${new Date(r.date).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'})}</div>
+                                            </div>
+                                        </div>
+                                        <div class="history-item-actions" data-record-id="${r.id}">
+                                            <button class="history-action-btn history-action-edit" data-edit-id="${r.id}">
+                                                <svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                <span>Изменить</span>
+                                            </button>
+                                            <button class="history-action-btn history-action-delete" data-delete-id="${r.id}">
+                                                <svg class="history-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                <span>Удалить</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('') : '<div class="empty-state">Записей нет</div>'}
+                            </div>
+                        </div>
+                    </div>`;
+
+                $('backBtn').addEventListener('click', () => { 
+                    currentScreen = 'list'; 
+                    vibrate(10); 
+                    renderScreen(); 
+                });
+                
+                $('addRecordBtn').addEventListener('click', () => { 
+                    modalMode = 'record'; 
+                    editRecordId = null; 
+                    modalTitle.textContent = 'Новая запись'; 
+                    modalDescLabel.textContent = 'Текст записи'; 
+                    reminderDateGroup.style.display = 'none'; 
+                    modalDesc.value = ''; 
+                    modalOverlay.classList.add('active'); 
+                    vibrate(20); 
+                });
+                
+                $('addReminderBtn').addEventListener('click', () => { 
+                    modalMode = 'reminder'; 
+                    modalTitle.textContent = 'Новое напоминание'; 
+                    modalDescLabel.textContent = 'Текст напоминания'; 
+                    reminderDateGroup.style.display = 'block'; 
+                    modalDesc.value = ''; 
+                    const t = new Date(); 
+                    t.setDate(t.getDate()+1); 
+                    reminderDate.value = t.toISOString().split('T')[0]; 
+                    modalOverlay.classList.add('active'); 
+                    vibrate(20); 
+                });
+                
+                const searchInput = $('searchInput');
+                searchInput.addEventListener('input', () => {
+                    searchQuery = searchInput.value;
+                    renderScreen();
+                });
+                
+                const toggleHistoryBtn = $('toggleHistoryBtn');
+                const historyList = $('historyList');
+                const historyToggleSvg = toggleHistoryBtn.querySelector('.history-toggle-svg');
+                
+                toggleHistoryBtn.addEventListener('click', () => {
+                    isHistoryCollapsed = !isHistoryCollapsed;
+                    historyToggleSvg.classList.toggle('rotated', !isHistoryCollapsed);
+                    historyList.classList.toggle('collapsed', isHistoryCollapsed);
+                    vibrate(10);
+                });
+                
+                document.querySelectorAll('.history-item').forEach(item => { 
+                    item.addEventListener('click', () => {
+                        const recordId = item.dataset.recordId;
+                        const actionsPanel = document.querySelector(`.history-item-actions[data-record-id="${recordId}"]`);
+                        
+                        document.querySelectorAll('.history-item.active').forEach(el => {
+                            if (el !== item) el.classList.remove('active');
+                        });
+                        document.querySelectorAll('.history-item-actions.open').forEach(el => {
+                            if (el !== actionsPanel) el.classList.remove('open');
+                        });
+                        
+                        const isOpen = item.classList.contains('active');
+                        item.classList.toggle('active', !isOpen);
+                        actionsPanel.classList.toggle('open', !isOpen);
+                        openedItemId = !isOpen ? recordId : null;
+                        vibrate(10);
+                    });
+                });
+                
+                document.querySelectorAll('[data-edit-id]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.editId;
+                        const rec = records.find(r => r.id == id);
+                        if (rec) {
+                            modalMode = 'edit';
+                            editRecordId = id;
+                            modalTitle.textContent = 'Редактировать запись';
+                            modalDescLabel.textContent = 'Текст записи';
+                            reminderDateGroup.style.display = 'none';
+                            modalDesc.value = rec.text;
+                            modalOverlay.classList.add('active');
+                            vibrate(20);
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('[data-delete-id]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.deleteId;
+                        const rec = records.find(r => r.id == id);
+                        if (rec) {
+                            confirmMessage.textContent = 'Удалить запись?';
+                            confirmSub.textContent = rec.text;
+                            deleteTarget = { type: 'record_delete', id };
+                            confirmDialog.classList.add('active');
+                            vibrate(20);
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.reminder-item').forEach(item => { 
+                    item.addEventListener('click', () => { 
+                        const id = item.dataset.reminderId; 
+                        const rem = reminders.find(r => r.id == id); 
+                        if (rem) { 
+                            confirmMessage.textContent = 'Выполнить напоминание?'; 
+                            confirmSub.textContent = rem.text; 
+                            deleteTarget = { type: 'reminder', id }; 
+                            confirmDialog.classList.add('active'); 
+                            vibrate(20); 
+                        } 
+                    }); 
+                });
+            }
+
+            $('closeModalBtn').addEventListener('click', () => modalOverlay.classList.remove('active'));
+            modalOverlay.addEventListener('click', (e) => { 
+                if (e.target === modalOverlay) modalOverlay.classList.remove('active'); 
+            });
+
+            submitModalBtn.addEventListener('click', async () => {
+                const text = modalDesc.value.trim();
+                if (!text) { 
+                    showToast('Введите текст'); 
+                    return; 
+                }
+                submitModalBtn.disabled = true;
+                
+                if (modalMode === 'record') {
+                    const { error } = await supabase.from('records').insert([{ car_id: currentCarId, text, date: new Date().toISOString() }]);
+                    if (error) showToast('Ошибка добавления'); 
+                    else showToast('Запись добавлена');
+                } else if (modalMode === 'reminder') {
+                    const dueDate = reminderDate.value;
+                    if (!dueDate) { 
+                        showToast('Выберите дату'); 
+                        submitModalBtn.disabled = false; 
+                        return; 
+                    }
+                    const { error } = await supabase.from('reminders').insert([{ car_id: currentCarId, text, due_date: dueDate, status: 'active', created_at: new Date().toISOString() }]);
+                    if (error) showToast('Ошибка добавления'); 
+                    else showToast('Напоминание добавлено');
+                } else if (modalMode === 'edit' && editRecordId) {
+                    const { error } = await supabase.from('records').update({ text }).eq('id', editRecordId);
+                    if (error) showToast('Ошибка обновления'); 
+                    else showToast('Запись обновлена');
+                }
+                
+                modalOverlay.classList.remove('active');
+                submitModalBtn.disabled = false;
+                await loadData();
+                renderScreen();
+            });
+
+            $('confirmCancelBtn').addEventListener('click', () => { 
+                confirmDialog.classList.remove('active'); 
+                deleteTarget = null; 
+            });
+            
+            $('confirmDeleteBtn').addEventListener('click', async () => {
+                if (!deleteTarget) return;
+                
+                if (deleteTarget.type === 'record_delete') {
+                    const { error } = await supabase.from('records').delete().eq('id', deleteTarget.id);
+                    if (error) showToast('Ошибка удаления');
+                    else {
+                        showToast('Запись удалена');
+                        await loadData();
+                        renderScreen();
+                    }
+                } else if (deleteTarget.type === 'reminder') {
+                    const rem = reminders.find(r => r.id == deleteTarget.id);
+                    if (rem) {
+                        await supabase.from('records').insert([{ car_id: rem.car_id, text: rem.text, date: new Date().toISOString() }]);
+                        await supabase.from('reminders').delete().eq('id', rem.id);
+                        showToast('Напоминание выполнено');
+                        await loadData();
+                        renderScreen();
+                    }
+                }
+                
+                confirmDialog.classList.remove('active');
+                deleteTarget = null;
+            });
+
+            confirmDialog.addEventListener('click', (e) => { 
+                if (e.target === confirmDialog) { 
+                    confirmDialog.classList.remove('active'); 
+                    deleteTarget = null; 
+                } 
+            });
+        })();
+    </script>
+</body>
+</html>
