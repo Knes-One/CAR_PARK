@@ -486,6 +486,147 @@
             pointer-events: none;
         }
 
+        /* Кнопка итог */
+        .totals-button {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .totals-button:active {
+            transform: scale(0.97);
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .totals-button-icon {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-secondary);
+            fill: none;
+            stroke-width: 2;
+            transition: transform 0.3s;
+        }
+
+        .totals-button-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        /* Меню итогов */
+        .totals-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+
+        .totals-menu.open {
+            max-height: 400px;
+            opacity: 1;
+            margin-bottom: 16px;
+        }
+
+        .totals-menu-content {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .totals-period-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .totals-period-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            touch-action: manipulation;
+            font-family: var(--font);
+        }
+
+        .totals-period-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+        }
+
+        .totals-period-btn:active {
+            transform: scale(0.95);
+        }
+
+        .totals-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .totals-main-amount {
+            text-align: center;
+            padding: 16px;
+            background: rgba(48, 209, 88, 0.1);
+            border-radius: 12px;
+        }
+
+        .totals-main-amount-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .totals-main-amount-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .totals-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .totals-stat-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .totals-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .totals-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
         .reminders-block {
             display: flex;
             flex-direction: column;
@@ -766,6 +907,7 @@
             visibility: hidden;
             transition: all 0.25s;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .modal-overlay.active {
@@ -784,6 +926,8 @@
             box-shadow: 0 30px 60px rgba(0,0,0,0.2);
             transform: translateY(20px) scale(0.96);
             transition: transform 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.active .modal-card {
@@ -848,6 +992,15 @@
             transition: all 0.2s;
             -webkit-user-select: text;
             user-select: text;
+            -webkit-appearance: none;
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .input-field:focus {
@@ -874,6 +1027,11 @@
 
         .submit-btn:active {
             transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            transform: none;
         }
 
         .confirm-dialog {
@@ -1053,6 +1211,14 @@
                 <label class="input-label" id="modalDescLabel">Текст записи</label>
                 <input class="input-field" id="modalDesc" placeholder="Например, Замена масла" autocomplete="off" maxlength="200">
             </div>
+            <div class="input-group" id="priceGroup" style="display:none;">
+                <label class="input-label">Цена траты (₽)</label>
+                <input class="input-field" id="modalPrice" type="number" min="0" max="1000000" step="1" placeholder="Например, 1500">
+            </div>
+            <div class="input-group" id="mileageGroup" style="display:none;">
+                <label class="input-label">Пробег (км)</label>
+                <input class="input-field" id="modalMileage" type="number" min="0" max="100000000000" step="1" placeholder="Например, 50000">
+            </div>
             <div class="input-group" id="reminderDateGroup" style="display:none;">
                 <label class="input-label">Дата выполнения</label>
                 <input class="input-field" id="reminderDate" type="date">
@@ -1095,6 +1261,9 @@
             let searchQuery = '';
             let isHistoryCollapsed = false;
             let openedItemId = null;
+            let totalsPeriod = 'month';
+            let isTotalsMenuOpen = false;
+            let isSubmitting = false;
 
             const $ = id => document.getElementById(id);
             const pinScreen = $('pinScreen');
@@ -1107,6 +1276,10 @@
             const modalTitle = $('modalTitle');
             const modalDesc = $('modalDesc');
             const modalDescLabel = $('modalDescLabel');
+            const modalPrice = $('modalPrice');
+            const modalMileage = $('modalMileage');
+            const priceGroup = $('priceGroup');
+            const mileageGroup = $('mileageGroup');
             const reminderDateGroup = $('reminderDateGroup');
             const reminderDate = $('reminderDate');
             const submitModalBtn = $('submitModalBtn');
@@ -1128,6 +1301,54 @@
 
             function updatePinDots() { 
                 pinDots.forEach((dot,i) => dot.classList.toggle('filled', i < pinCode.length)); 
+            }
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                                'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+                return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+            }
+
+            function sortRecordsByDate(recordsList) {
+                return [...recordsList].sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
+
+            function resetModalFields() {
+                modalDesc.value = '';
+                modalPrice.value = '';
+                modalMileage.value = '';
+                reminderDate.value = '';
+                editRecordId = null;
+            }
+
+            function checkUnsavedData() {
+                if (modalMode === 'record' || modalMode === 'edit') {
+                    return modalDesc.value.trim() !== '' || 
+                           modalPrice.value !== '' || 
+                           modalMileage.value !== '';
+                } else if (modalMode === 'reminder') {
+                    return modalDesc.value.trim() !== '';
+                }
+                return false;
+            }
+
+            function closeModalSafely() {
+                if (checkUnsavedData()) {
+                    confirmMessage.textContent = 'Закрыть без сохранения?';
+                    confirmSub.textContent = 'Введенные данные будут потеряны';
+                    deleteTarget = { type: 'close_modal' };
+                    confirmDialog.classList.add('active');
+                } else {
+                    modalOverlay.classList.remove('active');
+                    resetModalFields();
+                }
+            }
+
+            function focusModalInput() {
+                setTimeout(() => {
+                    modalDesc.focus();
+                }, 100);
             }
 
             pinKeypad.addEventListener('click', (e) => {
@@ -1183,6 +1404,32 @@
                 }
             }
 
+            function calculateTotals() {
+                const carRecords = records.filter(r => r.car_id == currentCarId && r.price);
+                const now = new Date();
+                let filtered = carRecords;
+                let periodLabel = 'За все время';
+                
+                if (totalsPeriod === 'month') {
+                    filtered = carRecords.filter(r => {
+                        const date = new Date(r.date);
+                        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    });
+                    periodLabel = 'За месяц';
+                } else if (totalsPeriod === 'year') {
+                    filtered = carRecords.filter(r => {
+                        const date = new Date(r.date);
+                        return date.getFullYear() === now.getFullYear();
+                    });
+                    periodLabel = 'За год';
+                }
+                
+                const total = filtered.reduce((sum, r) => sum + (parseFloat(r.price) || 0), 0);
+                const avgExpense = filtered.length > 0 ? total / filtered.length : 0;
+                
+                return { total, periodLabel, count: filtered.length, avgExpense };
+            }
+
             function renderScreen() {
                 if (currentScreen === 'list') renderCarList();
                 else renderCarDetail();
@@ -1214,6 +1461,8 @@
                         searchQuery = '';
                         isHistoryCollapsed = false;
                         openedItemId = null;
+                        totalsPeriod = 'month';
+                        isTotalsMenuOpen = false;
                         vibrate(10); 
                         renderScreen(); 
                     }); 
@@ -1228,9 +1477,10 @@
                     return; 
                 }
                 
-                const carRecords = records.filter(r => r.car_id == currentCarId);
+                const carRecords = sortRecordsByDate(records.filter(r => r.car_id == currentCarId));
                 const carReminders = reminders.filter(r => r.car_id == currentCarId && r.status === 'active');
                 const filteredRecords = searchQuery ? carRecords.filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase())) : carRecords;
+                const totals = calculateTotals();
                 
                 appContainer.innerHTML = `
                     <div class="car-detail-screen">
@@ -1264,6 +1514,39 @@
                             </svg>
                         </div>
                         
+                        <button class="totals-button" id="totalsButton">
+                            <span>Итог</span>
+                            <svg class="totals-button-icon ${isTotalsMenuOpen ? 'rotated' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        
+                        <div class="totals-menu ${isTotalsMenuOpen ? 'open' : ''}" id="totalsMenu">
+                            <div class="totals-menu-content">
+                                <div class="totals-period-selector">
+                                    <button class="totals-period-btn ${totalsPeriod === 'month' ? 'active' : ''}" data-period="month">Месяц</button>
+                                    <button class="totals-period-btn ${totalsPeriod === 'year' ? 'active' : ''}" data-period="year">Год</button>
+                                    <button class="totals-period-btn ${totalsPeriod === 'all' ? 'active' : ''}" data-period="all">Всё время</button>
+                                </div>
+                                <div class="totals-details">
+                                    <div class="totals-main-amount">
+                                        <div class="totals-main-amount-label">Общая сумма расходов</div>
+                                        <div class="totals-main-amount-value">${totals.total.toFixed(0)} ₽</div>
+                                    </div>
+                                    <div class="totals-stats">
+                                        <div class="totals-stat-item">
+                                            <div class="totals-stat-label">Количество записей</div>
+                                            <div class="totals-stat-value">${totals.count}</div>
+                                        </div>
+                                        <div class="totals-stat-item">
+                                            <div class="totals-stat-label">Средний расход</div>
+                                            <div class="totals-stat-value">${totals.avgExpense.toFixed(0)} ₽</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="reminders-block">
                             ${carReminders.map(r => `
                                 <div class="reminder-item" data-reminder-id="${r.id}">
@@ -1272,7 +1555,7 @@
                                         <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     <span class="reminder-text">${r.text}</span>
-                                    <span class="reminder-date">до ${new Date(r.due_date).toLocaleDateString('ru-RU')}</span>
+                                    <span class="reminder-date">до ${formatDate(r.due_date)}</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -1304,7 +1587,8 @@
                                             </div>
                                             <div class="history-details">
                                                 <div class="history-record-title">${r.text}</div>
-                                                <div class="history-date">${new Date(r.date).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'})}</div>
+                                                <div class="history-date">${formatDate(r.date)}</div>
+                                                ${r.price ? `<div style="font-size: 12px; color: var(--green); font-weight: 600;">${r.price} ₽${r.mileage ? ` • ${r.mileage} км` : ''}</div>` : ''}
                                             </div>
                                         </div>
                                         <div class="history-item-actions" data-record-id="${r.id}">
@@ -1337,11 +1621,14 @@
                 $('addRecordBtn').addEventListener('click', () => { 
                     modalMode = 'record'; 
                     editRecordId = null; 
-                    modalTitle.textContent = 'Новая запись'; 
-                    modalDescLabel.textContent = 'Текст записи'; 
+                    modalTitle.textContent = 'Новая трата'; 
+                    modalDescLabel.textContent = 'Описание траты'; 
+                    priceGroup.style.display = 'block'; 
+                    mileageGroup.style.display = 'block'; 
                     reminderDateGroup.style.display = 'none'; 
-                    modalDesc.value = ''; 
+                    resetModalFields();
                     modalOverlay.classList.add('active'); 
+                    focusModalInput();
                     vibrate(20); 
                 });
                 
@@ -1349,13 +1636,37 @@
                     modalMode = 'reminder'; 
                     modalTitle.textContent = 'Новое напоминание'; 
                     modalDescLabel.textContent = 'Текст напоминания'; 
+                    priceGroup.style.display = 'none'; 
+                    mileageGroup.style.display = 'none'; 
                     reminderDateGroup.style.display = 'block'; 
-                    modalDesc.value = ''; 
+                    resetModalFields();
                     const t = new Date(); 
                     t.setDate(t.getDate()+1); 
                     reminderDate.value = t.toISOString().split('T')[0]; 
                     modalOverlay.classList.add('active'); 
+                    focusModalInput();
                     vibrate(20); 
+                });
+                
+                $('totalsButton').addEventListener('click', () => {
+                    isTotalsMenuOpen = !isTotalsMenuOpen;
+                    const icon = document.querySelector('.totals-button-icon');
+                    if (icon) {
+                        icon.classList.toggle('rotated', isTotalsMenuOpen);
+                    }
+                    const menu = $('totalsMenu');
+                    if (menu) {
+                        menu.classList.toggle('open', isTotalsMenuOpen);
+                    }
+                    vibrate(10);
+                });
+                
+                document.querySelectorAll('.totals-period-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        totalsPeriod = btn.dataset.period;
+                        vibrate(10);
+                        renderScreen();
+                    });
                 });
                 
                 const searchInput = $('searchInput');
@@ -1404,10 +1715,15 @@
                             modalMode = 'edit';
                             editRecordId = id;
                             modalTitle.textContent = 'Редактировать запись';
-                            modalDescLabel.textContent = 'Текст записи';
+                            modalDescLabel.textContent = 'Описание траты';
+                            priceGroup.style.display = 'block';
+                            mileageGroup.style.display = 'block';
                             reminderDateGroup.style.display = 'none';
                             modalDesc.value = rec.text;
+                            modalPrice.value = rec.price || '';
+                            modalMileage.value = rec.mileage || '';
                             modalOverlay.classList.add('active');
+                            focusModalInput();
                             vibrate(20);
                         }
                     });
@@ -1443,43 +1759,107 @@
                 });
             }
 
-            $('closeModalBtn').addEventListener('click', () => modalOverlay.classList.remove('active'));
+            $('closeModalBtn').addEventListener('click', () => {
+                closeModalSafely();
+            });
+            
             modalOverlay.addEventListener('click', (e) => { 
-                if (e.target === modalOverlay) modalOverlay.classList.remove('active'); 
+                if (e.target === modalOverlay) {
+                    closeModalSafely();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                    closeModalSafely();
+                }
             });
 
             submitModalBtn.addEventListener('click', async () => {
+                if (isSubmitting) return;
+                
                 const text = modalDesc.value.trim();
                 if (!text) { 
                     showToast('Введите текст'); 
+                    modalDesc.focus();
                     return; 
                 }
+                
+                isSubmitting = true;
                 submitModalBtn.disabled = true;
                 
-                if (modalMode === 'record') {
-                    const { error } = await supabase.from('records').insert([{ car_id: currentCarId, text, date: new Date().toISOString() }]);
-                    if (error) showToast('Ошибка добавления'); 
-                    else showToast('Запись добавлена');
-                } else if (modalMode === 'reminder') {
-                    const dueDate = reminderDate.value;
-                    if (!dueDate) { 
-                        showToast('Выберите дату'); 
-                        submitModalBtn.disabled = false; 
-                        return; 
+                try {
+                    if (modalMode === 'record') {
+                        const price = modalPrice.value ? parseFloat(modalPrice.value) : null;
+                        const mileage = modalMileage.value ? parseInt(modalMileage.value) : null;
+                        
+                        if (price > 1000000) {
+                            showToast('Цена не может превышать 1 000 000 ₽');
+                            return;
+                        }
+                        if (mileage > 100000000000) {
+                            showToast('Пробег не может превышать 100 000 000 000 км');
+                            return;
+                        }
+                        
+                        const { error } = await supabase.from('records').insert([{ 
+                            car_id: currentCarId, 
+                            text, 
+                            date: new Date().toISOString(),
+                            price,
+                            mileage
+                        }]);
+                        if (error) throw error;
+                        showToast('Запись добавлена');
+                    } else if (modalMode === 'reminder') {
+                        const dueDate = reminderDate.value;
+                        if (!dueDate) { 
+                            showToast('Выберите дату');
+                            reminderDate.focus();
+                            return; 
+                        }
+                        const { error } = await supabase.from('reminders').insert([{ 
+                            car_id: currentCarId, 
+                            text, 
+                            due_date: dueDate, 
+                            status: 'active', 
+                            created_at: new Date().toISOString() 
+                        }]);
+                        if (error) throw error;
+                        showToast('Напоминание добавлено');
+                    } else if (modalMode === 'edit' && editRecordId) {
+                        const price = modalPrice.value ? parseFloat(modalPrice.value) : null;
+                        const mileage = modalMileage.value ? parseInt(modalMileage.value) : null;
+                        
+                        if (price > 1000000) {
+                            showToast('Цена не может превышать 1 000 000 ₽');
+                            return;
+                        }
+                        if (mileage > 100000000000) {
+                            showToast('Пробег не может превышать 100 000 000 000 км');
+                            return;
+                        }
+                        
+                        const { error } = await supabase.from('records').update({ 
+                            text,
+                            price,
+                            mileage
+                        }).eq('id', editRecordId);
+                        if (error) throw error;
+                        showToast('Запись обновлена');
                     }
-                    const { error } = await supabase.from('reminders').insert([{ car_id: currentCarId, text, due_date: dueDate, status: 'active', created_at: new Date().toISOString() }]);
-                    if (error) showToast('Ошибка добавления'); 
-                    else showToast('Напоминание добавлено');
-                } else if (modalMode === 'edit' && editRecordId) {
-                    const { error } = await supabase.from('records').update({ text }).eq('id', editRecordId);
-                    if (error) showToast('Ошибка обновления'); 
-                    else showToast('Запись обновлена');
+                    
+                    modalOverlay.classList.remove('active');
+                    resetModalFields();
+                    await loadData();
+                    renderScreen();
+                } catch (e) {
+                    console.error(e);
+                    showToast('Произошла ошибка');
+                } finally {
+                    isSubmitting = false;
+                    submitModalBtn.disabled = false;
                 }
-                
-                modalOverlay.classList.remove('active');
-                submitModalBtn.disabled = false;
-                await loadData();
-                renderScreen();
             });
 
             $('confirmCancelBtn').addEventListener('click', () => { 
@@ -1489,6 +1869,14 @@
             
             $('confirmDeleteBtn').addEventListener('click', async () => {
                 if (!deleteTarget) return;
+                
+                if (deleteTarget.type === 'close_modal') {
+                    modalOverlay.classList.remove('active');
+                    resetModalFields();
+                    confirmDialog.classList.remove('active');
+                    deleteTarget = null;
+                    return;
+                }
                 
                 if (deleteTarget.type === 'record_delete') {
                     const { error } = await supabase.from('records').delete().eq('id', deleteTarget.id);
@@ -1501,7 +1889,11 @@
                 } else if (deleteTarget.type === 'reminder') {
                     const rem = reminders.find(r => r.id == deleteTarget.id);
                     if (rem) {
-                        await supabase.from('records').insert([{ car_id: rem.car_id, text: rem.text, date: new Date().toISOString() }]);
+                        await supabase.from('records').insert([{ 
+                            car_id: rem.car_id, 
+                            text: rem.text, 
+                            date: new Date().toISOString() 
+                        }]);
                         await supabase.from('reminders').delete().eq('id', rem.id);
                         showToast('Напоминание выполнено');
                         await loadData();
